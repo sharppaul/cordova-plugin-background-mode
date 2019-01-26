@@ -189,14 +189,14 @@ public class ForegroundService extends Service {
                 .setOngoing(true)
                 .setSmallIcon(getIconResId(settings));
 
-//        if (settings.optBoolean("hidden", true)) {
-//            notification.setPriority(Notification.PRIORITY_MIN);
-//        }
+        if (settings.optBoolean("hidden", true)) {
+            notification.setPriority(Notification.PRIORITY_MIN);
+        }
 
-//        if (bigText || text.contains("\n")) {
-//            notification.setStyle(
-//                    new NotificationCompat.BigTextStyle().bigText(text));
-//        }
+        if (bigText || text.contains("\n")) {
+            notification.setStyle(
+                    new NotificationCompat.BigTextStyle().bigText(text));
+        }
 
         setColor(notification, settings);
 
@@ -299,5 +299,6 @@ public class ForegroundService extends Service {
     }
 
 }
+
 
 
