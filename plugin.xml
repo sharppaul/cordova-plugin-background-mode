@@ -88,5 +88,7 @@
         <source-file
             src="src/android/ForegroundService.java"
             target-dir="src/de/appplant/cordova/plugin/background" />
+
+	<framework src="src/android/gradle/build.gradle" custom="true" type="gradleReference" />
     </platform>
 </plugin>
