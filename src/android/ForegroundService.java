@@ -23,6 +23,7 @@ package de.appplant.cordova.plugin.background;
 
 import android.annotation.TargetApi;
 import android.app.Notification;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -33,6 +34,7 @@ import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.support.v4.app.NotificationCompat;
 
 import org.json.JSONObject;
 
@@ -47,6 +49,7 @@ public class ForegroundService extends Service {
 
     // Fixed ID for the 'foreground' notification
     public static final int NOTIFICATION_ID = -574543954;
+    public static final String NOTIFICATION_CHANNEL_ID = "ETRAILER_CHANNEL";
 
     // Default title of the background notification
     private static final String NOTIFICATION_TITLE =
@@ -69,7 +72,7 @@ public class ForegroundService extends Service {
      * Allow clients to call on to the service.
      */
     @Override
-    public IBinder onBind (Intent intent) {
+    public IBinder onBind(Intent intent) {
         return mBinder;
     }
 
@@ -90,8 +93,9 @@ public class ForegroundService extends Service {
      * by the OS.
      */
     @Override
-    public void onCreate () {
+    public void onCreate() {
         super.onCreate();
+        createNotificationChannel();
         keepAwake();
     }
 
@@ -110,19 +114,16 @@ public class ForegroundService extends Service {
      */
     private void keepAwake() {
         JSONObject settings = BackgroundMode.getSettings();
-        boolean isSilent    = settings.optBoolean("silent", false);
 
-        if (!isSilent) {
-            startForeground(NOTIFICATION_ID, makeNotification());
-        }
+        startForeground(NOTIFICATION_ID, makeNotification());
 
         PowerManager pm = (PowerManager)
                 getSystemService(POWER_SERVICE);
 
-        wakeLock = pm.newWakeLock(
-                PARTIAL_WAKE_LOCK, "BackgroundMode");
+        assert pm != null;
+        wakeLock = pm.newWakeLock(PARTIAL_WAKE_LOCK, "etrailer:background_activity");
 
-        wakeLock.acquire();
+        wakeLock.acquire(2 * 24 * 60 * 60 * 1000);
     }
 
     /**
@@ -146,6 +147,26 @@ public class ForegroundService extends Service {
         return makeNotification(BackgroundMode.getSettings());
     }
 
+    private void createNotificationChannel() {
+        // Create the NotificationChannel, but only on API 26+ because
+        // the NotificationChannel class is new and not in the support library
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Activity notification";
+            String description = "Shows that the app is running in the background.";
+            int importance = NotificationManager.IMPORTANCE_LOW;
+
+            NotificationChannel channel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            assert notificationManager != null;
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+
     /**
      * Create a notification as the visible part to be able to put the service
      * in a foreground state.
@@ -153,29 +174,29 @@ public class ForegroundService extends Service {
      * @param settings The config settings
      */
     private Notification makeNotification(JSONObject settings) {
-        String title    = settings.optString("title", NOTIFICATION_TITLE);
-        String text     = settings.optString("text", NOTIFICATION_TEXT);
+        String title = settings.optString("title", NOTIFICATION_TITLE);
+        String text = settings.optString("text", NOTIFICATION_TEXT);
         boolean bigText = settings.optBoolean("bigText", false);
 
         Context context = getApplicationContext();
-        String pkgName  = context.getPackageName();
-        Intent intent   = context.getPackageManager()
+        String pkgName = context.getPackageName();
+        Intent intent = context.getPackageManager()
                 .getLaunchIntentForPackage(pkgName);
 
-        Notification.Builder notification = new Notification.Builder(context)
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setOngoing(true)
                 .setSmallIcon(getIconResId(settings));
 
-        if (settings.optBoolean("hidden", true)) {
-            notification.setPriority(Notification.PRIORITY_MIN);
-        }
+//        if (settings.optBoolean("hidden", true)) {
+//            notification.setPriority(Notification.PRIORITY_MIN);
+//        }
 
-        if (bigText || text.contains("\n")) {
-            notification.setStyle(
-                    new Notification.BigTextStyle().bigText(text));
-        }
+//        if (bigText || text.contains("\n")) {
+//            notification.setStyle(
+//                    new NotificationCompat.BigTextStyle().bigText(text));
+//        }
 
         setColor(notification, settings);
 
@@ -197,7 +218,7 @@ public class ForegroundService extends Service {
      *
      * @param settings The config settings
      */
-    protected void updateNotification (JSONObject settings) {
+    protected void updateNotification(JSONObject settings) {
         boolean isSilent = settings.optBoolean("silent", false);
 
         if (isSilent) {
@@ -232,11 +253,10 @@ public class ForegroundService extends Service {
      *
      * @param icon The name of the icon.
      * @param type The resource type where to look for.
-     *
      * @return The resource id or 0 if not found.
      */
     private int getIconResId(String icon, String type) {
-        Resources res  = getResources();
+        Resources res = getResources();
         String pkgName = getPackageName();
 
         int resId = res.getIdentifier(icon, type, pkgName);
@@ -252,10 +272,10 @@ public class ForegroundService extends Service {
      * Set notification color if its supported by the SDK.
      *
      * @param notification A Notification.Builder instance
-     * @param settings A JSON dict containing the color definition (red: FF0000)
+     * @param settings     A JSON dict containing the color definition (red: FF0000)
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void setColor(Notification.Builder notification,
+    private void setColor(NotificationCompat.Builder notification,
                           JSONObject settings) {
 
         String hex = settings.optString("color", null);
@@ -279,3 +299,5 @@ public class ForegroundService extends Service {
     }
 
 }
+
+

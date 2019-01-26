@@ -292,3 +292,4 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
 }
+
