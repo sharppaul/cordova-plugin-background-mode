@@ -176,6 +176,13 @@ public class ForegroundService extends Service {
     private Notification makeNotification(JSONObject settings) {
         String title = settings.optString("title", NOTIFICATION_TITLE);
         String text = settings.optString("text", NOTIFICATION_TEXT);
+        
+        try{
+            Log.d("ForegroundMode", "Creating notification " + title); 
+        }catch(Exception e){
+            //nothing, probably means title is empty.
+            Log.e("ForegroundMode", e);
+        }
         boolean bigText = settings.optBoolean("bigText", false);
 
         Context context = getApplicationContext();
