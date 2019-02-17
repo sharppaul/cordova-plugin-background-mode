@@ -182,7 +182,7 @@ public class ForegroundService extends Service {
             Log.d("ForegroundMode", "Creating notification " + title); 
         }catch(Exception e){
             //nothing, probably means title is empty.
-            Log.e("ForegroundMode", e);
+            Log.e("ForegroundMode", "Couldn't log title", e);
         }
         boolean bigText = settings.optBoolean("bigText", false);
 
