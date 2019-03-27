@@ -32,4 +32,7 @@
 // Deactivate the background mode
 - (void) disable:(CDVInvokedUrlCommand*)command;
 
+- (void) open:(CDVInvokedUrlCommand *)command;
+
+
 @end
