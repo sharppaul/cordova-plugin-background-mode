@@ -1,0 +1,6 @@
+.project/*
+.gradle/*
+.settings/*
+.project
+.gradle
+.settings
