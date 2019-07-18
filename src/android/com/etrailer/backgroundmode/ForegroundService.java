@@ -19,7 +19,7 @@
     under the License.
  */
 
-package de.appplant.cordova.plugin.background;
+package com.etrailer.backgroundmode;
 
 import android.annotation.TargetApi;
 import android.app.Notification;

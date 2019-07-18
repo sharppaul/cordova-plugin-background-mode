@@ -1,9 +1,9 @@
 {
-  "name": "cordova-plugin-background-mode",
-  "version": "0.8.0",
-  "description": "Prevent apps from going to sleep in background.",
+  "name": "e-trailer-services-plugin",
+  "version": "0.1.0",
+  "description": "Keeps the E-Trailer services running in background. Inspired by background mode and other Phonegap plugins",
   "cordova": {
-    "id": "cordova-plugin-background-mode",
+    "id": "e-trailer-services-plugin",
     "platforms": [
       "ios",
       "android"
@@ -28,7 +28,7 @@
     },
     {
       "name": "android-sdk",
-      "version": ">=19"
+      "version": ">=18"
     }
   ],
   "author": "Sebastián Katzer, Paul Weerheim",

@@ -2,20 +2,19 @@
 
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
         xmlns:android="http://schemas.android.com/apk/res/android"
-        id="cordova-plugin-background-mode"
-        version="0.8.0">
+        id="e-trailer-services-plugin"
+        version="0.1.0">
 
-    <name>BackgroundMode</name>
+    <name>E-Trailer Plugin</name>
 
-    <description>Prevent apps from going to sleep in background.</description>
+    <description>Keeps the E-Trailer services running in background. Inspired by background mode and other Phonegap plugins</description>
 
     <repo>https://github.com/katzer/cordova-plugin-background-mode.git</repo>
 
-    <keywords>appplant, background</keywords>
+    <keywords>e-trailer, bluetooth, background</keywords>
 
     <license>Apache 2.0</license>
 
-    <author>Sebastián Katzer</author>
     <author>Paul Weerheim</author>
 
     <!-- dependencies -->
@@ -24,13 +23,17 @@
     <!-- cordova -->
     <engines>
         <engine name="cordova" version=">=3.0.0" />
-        <engine name="android-sdk" version=">=16" />
+        <engine name="android-sdk" version=">=18" />
     </engines>
 
     <!-- js -->
     <js-module src="www/background-mode.js" name="BackgroundMode">
         <clobbers target="cordova.plugins.backgroundMode" />
         <clobbers target="plugin.backgroundMode" />
+    </js-module>
+    <js-module src="www/autostart.js" name="AutoStart">
+        <clobbers target="cordova.plugins.autostart" />
+        <clobbers target="plugin.autostart" />
     </js-module>
 
     <!-- ios -->
@@ -61,7 +64,11 @@
         <config-file target="res/xml/config.xml" parent="/*">
             <feature name="BackgroundMode" >
                 <param name="android-package"
-                      value="de.appplant.cordova.plugin.background.BackgroundMode"/>
+                      value="com.etrailer.backgroundmode.BackgroundMode"/>
+            </feature>
+            <feature name="AutoStart" >
+                <param name="android-package"
+                      value="com.etrailer.autostart.AutoStart"/>
             </feature>
         </config-file>
 
@@ -70,7 +77,13 @@
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
-            <service android:name="de.appplant.cordova.plugin.background.ForegroundService" />
+            <service android:name="com.etrailer.backgroundmode.ForegroundService" />
+            <service android:name="com.etrailer.autostart.AutoStartService" />
+            <receiver android:name="com.etrailer.autostart.MyBroadcastReceiver"  android:exported="true">
+                <intent-filter>
+                    <action android:name="com.etrailer.autostart.AutoStartService.ACTION_STOP_WATCHING"/>
+                </intent-filter>
+            </receiver>
         </config-file>
 
         <config-file target="AndroidManifest.xml" parent="/manifest">
@@ -78,16 +91,28 @@
         </config-file>
 
         <source-file
-            src="src/android/BackgroundMode.java"
-            target-dir="src/de/appplant/cordova/plugin/background" />
+            src="src/android/com/etrailer/autostart/AutoStartService.java"
+            target-dir="src/com/etrailer/autostart" />
 
         <source-file
-            src="src/android/BackgroundExt.java"
-            target-dir="src/de/appplant/cordova/plugin/background" />
+            src="src/android/com/etrailer/autostart/AutoStart.java"
+            target-dir="src/com/etrailer/autostart" />
 
         <source-file
-            src="src/android/ForegroundService.java"
-            target-dir="src/de/appplant/cordova/plugin/background" />
+            src="src/android/com/etrailer/autostart/MyBroadcastReceiver.java"
+            target-dir="src/com/etrailer/autostart" />
+
+        <source-file
+            src="src/android/com/etrailer/backgroundmode/BackgroundMode.java"
+            target-dir="src/com/etrailer/backgroundmode" />
+
+        <source-file
+            src="src/android/com/etrailer/backgroundmode/BackgroundExt.java"
+            target-dir="src/com/etrailer/backgroundmode" />
+
+        <source-file
+            src="src/android/com/etrailer/backgroundmode/ForegroundService.java"
+            target-dir="src/com/etrailer/backgroundmode" />
 
 	<framework src="src/android/gradle/build.gradle" custom="true" type="gradleReference" />
     </platform>

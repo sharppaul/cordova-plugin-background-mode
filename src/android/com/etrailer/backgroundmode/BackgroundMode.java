@@ -1,25 +1,4 @@
-/*
-    Copyright 2013-2017 appPlant GmbH
-
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
- */
-
-package de.appplant.cordova.plugin.background;
+package com.etrailer.backgroundmode;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -33,7 +12,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import de.appplant.cordova.plugin.background.ForegroundService.ForegroundBinder;
+import com.etrailer.backgroundmode.ForegroundService.ForegroundBinder;
 
 import static android.content.Context.BIND_AUTO_CREATE;
 
@@ -45,8 +24,7 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
     // Plugin namespace
-    private static final String JS_NAMESPACE =
-            "cordova.plugins.backgroundMode";
+    private static final String JS_NAMESPACE = "cordova.plugins.backgroundMode";
 
     // Flag indicates if the app is in background or foreground
     private boolean inBackground = false;
@@ -89,16 +67,14 @@ public class BackgroundMode extends CordovaPlugin {
      *
      * @param action   The action to execute.
      * @param args     The exec() arguments.
-     * @param callback The callback context used when
-     *                 calling back into JavaScript.
+     * @param callback The callback context used when calling back into JavaScript.
      *
      * @return Returning false results in a "MethodNotFound" error.
      *
      * @throws JSONException
      */
     @Override
-    public boolean execute (String action, JSONArray args,
-                            CallbackContext callback) throws JSONException {
+    public boolean execute(String action, JSONArray args, CallbackContext callback) throws JSONException {
 
         if (action.equalsIgnoreCase("configure")) {
             configure(args.getJSONObject(0), args.getBoolean(1));
@@ -181,7 +157,7 @@ public class BackgroundMode extends CordovaPlugin {
      * Update the default settings and configure the notification.
      *
      * @param settings The settings
-     * @param update A truthy value means to update the running service.
+     * @param update   A truthy value means to update the running service.
      */
     private void configure(JSONObject settings, boolean update) {
         if (update) {
@@ -203,8 +179,7 @@ public class BackgroundMode extends CordovaPlugin {
     /**
      * The settings for the new/updated notification.
      *
-     * @return
-     *      updateSettings if set or default settings
+     * @return updateSettings if set or default settings
      */
     protected static JSONObject getSettings() {
         return defaultSettings;
@@ -222,8 +197,7 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
     /**
-     * Bind the activity to a background service and put them into foreground
-     * state.
+     * Bind the activity to a background service and put them into foreground state.
      */
     private void startService() {
         Activity context = cordova.getActivity();
@@ -245,12 +219,11 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
     /**
-     * Bind the activity to a background service and put them into foreground
-     * state.
+     * Bind the activity to a background service and put them into foreground state.
      */
     private void stopService() {
         Activity context = cordova.getActivity();
-        Intent intent    = new Intent(context, ForegroundService.class);
+        Intent intent = new Intent(context, ForegroundService.class);
 
         if (!isBind)
             return;
@@ -265,21 +238,18 @@ public class BackgroundMode extends CordovaPlugin {
     /**
      * Fire vent with some parameters inside the web view.
      *
-     * @param event The name of the event
+     * @param event  The name of the event
      * @param params Optional arguments for the event
      */
-    private void fireEvent (Event event, String params) {
+    private void fireEvent(Event event, String params) {
         String eventName = event.name().toLowerCase();
-        Boolean active   = event == Event.ACTIVATE;
+        Boolean active = event == Event.ACTIVATE;
 
-        String str = String.format("%s._setActive(%b)",
-                JS_NAMESPACE, active);
+        String str = String.format("%s._setActive(%b)", JS_NAMESPACE, active);
 
-        str = String.format("%s;%s.on%s(%s)",
-                str, JS_NAMESPACE, eventName, params);
+        str = String.format("%s;%s.on%s(%s)", str, JS_NAMESPACE, eventName, params);
 
-        str = String.format("%s;%s.fireEvent('%s',%s);",
-                str, JS_NAMESPACE, eventName, params);
+        str = String.format("%s;%s.fireEvent('%s',%s);", str, JS_NAMESPACE, eventName, params);
 
         final String js = str;
 
@@ -292,4 +262,3 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
 }
-

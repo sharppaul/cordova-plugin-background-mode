@@ -28,6 +28,17 @@ var exec    = require('cordova/exec'),
  *************/
 
 /**
+ * Starts the background service for listening to bluetooth device.
+ *
+ * @return [ Void ]
+ */
+exports.bluetoothService = function(mac_address) {
+    if (!this._isAndroid) return;
+    cordova.exec(null, null, 'BackgroundMode', 'bluetoothService', [mac_address]);
+};
+
+
+/**
  * Activates the background mode. When activated the application
  * will be prevented from going to sleep while in background
  * for the next time.
