@@ -45,8 +45,7 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
     // Plugin namespace
-    private static final String JS_NAMESPACE =
-            "cordova.plugins.backgroundMode";
+    private static final String JS_NAMESPACE = "cordova.plugins.backgroundMode";
 
     // Flag indicates if the app is in background or foreground
     private boolean inBackground = false;
@@ -89,16 +88,14 @@ public class BackgroundMode extends CordovaPlugin {
      *
      * @param action   The action to execute.
      * @param args     The exec() arguments.
-     * @param callback The callback context used when
-     *                 calling back into JavaScript.
+     * @param callback The callback context used when calling back into JavaScript.
      *
      * @return Returning false results in a "MethodNotFound" error.
      *
      * @throws JSONException
      */
     @Override
-    public boolean execute (String action, JSONArray args,
-                            CallbackContext callback) throws JSONException {
+    public boolean execute(String action, JSONArray args, CallbackContext callback) throws JSONException {
 
         if (action.equalsIgnoreCase("configure")) {
             configure(args.getJSONObject(0), args.getBoolean(1));
@@ -181,7 +178,7 @@ public class BackgroundMode extends CordovaPlugin {
      * Update the default settings and configure the notification.
      *
      * @param settings The settings
-     * @param update A truthy value means to update the running service.
+     * @param update   A truthy value means to update the running service.
      */
     private void configure(JSONObject settings, boolean update) {
         if (update) {
@@ -203,8 +200,7 @@ public class BackgroundMode extends CordovaPlugin {
     /**
      * The settings for the new/updated notification.
      *
-     * @return
-     *      updateSettings if set or default settings
+     * @return updateSettings if set or default settings
      */
     protected static JSONObject getSettings() {
         return defaultSettings;
@@ -222,8 +218,7 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
     /**
-     * Bind the activity to a background service and put them into foreground
-     * state.
+     * Bind the activity to a background service and put them into foreground state.
      */
     private void startService() {
         Activity context = cordova.getActivity();
@@ -236,7 +231,12 @@ public class BackgroundMode extends CordovaPlugin {
         try {
             context.bindService(intent, connection, BIND_AUTO_CREATE);
             fireEvent(Event.ACTIVATE, null);
-            context.startService(intent);
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                context.startForegroundService(intent);
+            } else {
+                context.startService(intent);
+            }
         } catch (Exception e) {
             fireEvent(Event.FAILURE, String.format("'%s'", e.getMessage()));
         }
@@ -245,12 +245,11 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
     /**
-     * Bind the activity to a background service and put them into foreground
-     * state.
+     * Bind the activity to a background service and put them into foreground state.
      */
     private void stopService() {
         Activity context = cordova.getActivity();
-        Intent intent    = new Intent(context, ForegroundService.class);
+        Intent intent = new Intent(context, ForegroundService.class);
 
         if (!isBind)
             return;
@@ -265,21 +264,18 @@ public class BackgroundMode extends CordovaPlugin {
     /**
      * Fire vent with some parameters inside the web view.
      *
-     * @param event The name of the event
+     * @param event  The name of the event
      * @param params Optional arguments for the event
      */
-    private void fireEvent (Event event, String params) {
+    private void fireEvent(Event event, String params) {
         String eventName = event.name().toLowerCase();
-        Boolean active   = event == Event.ACTIVATE;
+        Boolean active = event == Event.ACTIVATE;
 
-        String str = String.format("%s._setActive(%b)",
-                JS_NAMESPACE, active);
+        String str = String.format("%s._setActive(%b)", JS_NAMESPACE, active);
 
-        str = String.format("%s;%s.on%s(%s)",
-                str, JS_NAMESPACE, eventName, params);
+        str = String.format("%s;%s.on%s(%s)", str, JS_NAMESPACE, eventName, params);
 
-        str = String.format("%s;%s.fireEvent('%s',%s);",
-                str, JS_NAMESPACE, eventName, params);
+        str = String.format("%s;%s.fireEvent('%s',%s);", str, JS_NAMESPACE, eventName, params);
 
         final String js = str;
 
@@ -292,4 +288,3 @@ public class BackgroundMode extends CordovaPlugin {
     }
 
 }
-
