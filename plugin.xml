@@ -79,7 +79,7 @@
         <config-file target="AndroidManifest.xml" parent="/manifest/application">
             <service android:name="com.etrailer.backgroundmode.ForegroundService" />
             <service android:name="com.etrailer.autostart.AutoStartService" />
-            <receiver android:name="com.etrailer.autostart.MyBroadcastReceiver"  android:exported="true">
+            <receiver android:name="com.etrailer.autostart.AutoStartBroadcastReceiver"  android:exported="true">
                 <intent-filter>
                     <action android:name="com.etrailer.autostart.AutoStartService.ACTION_STOP_WATCHING"/>
                 </intent-filter>
@@ -100,7 +100,7 @@
             target-dir="src/com/etrailer/autostart" />
 
         <source-file
-            src="src/android/com/etrailer/autostart/MyBroadcastReceiver.java"
+            src="src/android/com/etrailer/autostart/AutoStartBroadcastReceiver.java"
             target-dir="src/com/etrailer/autostart" />
 
         <source-file

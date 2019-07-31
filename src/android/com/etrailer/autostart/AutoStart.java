@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -20,14 +22,16 @@ public class AutoStart extends CordovaPlugin {
 
     private boolean autoStartServiceIsBind = false;
     private AutoStartService startService;
-
-    private String macAddress = "88:6B:0F:07:05:3C";
+    private SharedPreferences mPrefs;
+    private String address = "88:6B:0F:07:05:3C";
 
     public static boolean isActive = false;
 
     @Override
     protected void pluginInitialize() {
-        // TODO: stuff
+        mPrefs = cordova.getActivity().getSharedPreferences("autoStart", 0);
+        AutoStart.isActive = mPrefs.getBoolean("enabled", false);
+        stopService("pluginInitialize()");
     }
 
     /**
@@ -36,22 +40,49 @@ public class AutoStart extends CordovaPlugin {
      * @param action   The action to execute.
      * @param args     The exec() arguments.
      * @param callback The callback context used when calling back into JavaScript.
-     *
      * @return Returning false results in a "MethodNotFound" error.
-     *
-     * @throws JSONException
+     * @throws JSONException The exception thrown when arguments are incorrect and
+     *                       not caught.
      */
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callback) throws JSONException {
         if (action.equalsIgnoreCase("start")) {
+            Log.d(TAG, "start()");
+            switchAutoStart(true);
             callback.success();
             return true;
         }
 
-        if (action.equalsIgnoreCase("update")) {
-            Log.d("AutoStart", "started");
+        if (action.equalsIgnoreCase("stop")) {
+            Log.d(TAG, "stop");
+            switchAutoStart(false);
             callback.success();
             return true;
+        }
+
+        if (action.equalsIgnoreCase("address")) {
+            Log.d(TAG, "address");
+            try {
+                this.address = args.getString(0);
+                callback.success();
+                return true;
+
+            } catch (Exception e) {
+                callback.error("invalid argument");
+                Log.e(TAG, "Error setting address: ", e);
+                return false;
+            }
+        }
+
+        if (action.equalsIgnoreCase("supportsBle")) {
+            Log.d(TAG, "supportsBle()");
+            if (isBleSupported()) {
+                callback.success("BLE supported");
+                return true;
+            } else {
+                callback.error("BLE not supported");
+                return false;
+            }
         }
 
         return true;
@@ -59,42 +90,51 @@ public class AutoStart extends CordovaPlugin {
 
     @Override
     public void onPause(boolean multitasking) {
-        Log.d(TAG, "onPause");
-        AutoStart.isActive = false;
-        if(this.macAddress != null){
-            Activity context = cordova.getActivity();
-            this.startAutoStartService(context, this.macAddress);
-        }
+        // startService("onPause");
     }
 
     @Override
     public void onResume(boolean multitasking) {
-        Log.d(TAG, "onResume");
-        AutoStart.isActive = true;
-        Activity context = cordova.getActivity();
-        this.stopAutoStartService(context);
+        stopService("onResume");
     }
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "onDestroy");
-        AutoStart.isActive = false;
-        if(this.macAddress != null){
+        startService("onDestroy");
+    }
+
+    private void switchAutoStart(boolean onOrOff) {
+        SharedPreferences.Editor mEditor = mPrefs.edit();
+        mEditor.putBoolean("enabled", onOrOff).apply();
+        AutoStart.isActive = onOrOff;
+    }
+
+    private void startService(String log) {
+        Log.d(TAG, "startService() - " + log);
+        if (this.address != null && AutoStart.isActive) {
             Activity context = cordova.getActivity();
-            this.startAutoStartService(context, this.macAddress);
+            this.startAutoStartService(context, this.address);
+        }
+    }
+
+    private void stopService(String log) {
+        Log.d(TAG, "stopService() - " + log);
+        if (this.address != null && AutoStart.isActive) {
+            Activity context = cordova.getActivity();
+            this.stopAutoStartService(context);
         }
     }
 
     /**
      * Start bluetooth autostart service
      */
-    private void startAutoStartService(Activity context, String macAddress) {
+    private void startAutoStartService(Activity context, String address) {
         if (autoStartServiceIsBind)
             return;
 
         Intent intent = new Intent(context, AutoStartService.class);
 
-        intent.putExtra("mac", macAddress);
+        intent.putExtra("address", address);
         try {
             context.bindService(intent, autoStartConnection, BIND_AUTO_CREATE);
 
@@ -114,7 +154,7 @@ public class AutoStart extends CordovaPlugin {
     /**
      * Stop bluetooth autostart service
      */
-    public void stopAutoStartService(Activity context) {
+    private void stopAutoStartService(Activity context) {
         Intent intent = new Intent(context, AutoStartService.class);
 
         if (!autoStartServiceIsBind)
@@ -126,6 +166,13 @@ public class AutoStart extends CordovaPlugin {
         autoStartServiceIsBind = false;
 
         stopAutoStartService(context);
+    }
+
+    private boolean isBleSupported() {
+        // Use this check to determine whether BLE is supported on the device. Then
+        // you can selectively disable BLE-related features.
+        Activity context = cordova.getActivity();
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
     }
 
     private final ServiceConnection autoStartConnection = new ServiceConnection() {
