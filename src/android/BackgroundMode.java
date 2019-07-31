@@ -212,7 +212,7 @@ public class BackgroundMode extends CordovaPlugin {
      * @param settings The config settings
      */
     private void updateNotification(JSONObject settings) {
-        if (isBind) {
+        if (isBind && service != null) {
             service.updateNotification(settings);
         }
     }

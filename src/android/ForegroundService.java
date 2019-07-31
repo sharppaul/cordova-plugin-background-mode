@@ -53,12 +53,10 @@ public class ForegroundService extends Service {
     public static final String NOTIFICATION_CHANNEL_ID = "ETRAILER_CHANNEL";
 
     // Default title of the background notification
-    private static final String NOTIFICATION_TITLE =
-            "App is running in background";
+    private static final String NOTIFICATION_TITLE = "App is running in background";
 
     // Default text of the background notification
-    private static final String NOTIFICATION_TEXT =
-            "Doing heavy tasks.";
+    private static final String NOTIFICATION_TEXT = "Doing heavy tasks.";
 
     // Default icon of the background notification
     private static final String NOTIFICATION_ICON = "icon";
@@ -78,8 +76,8 @@ public class ForegroundService extends Service {
     }
 
     /**
-     * Class used for the client Binder.  Because we know this service always
-     * runs in the same process as its clients, we don't need to deal with IPC.
+     * Class used for the client Binder. Because we know this service always runs in
+     * the same process as its clients, we don't need to deal with IPC.
      */
     public class ForegroundBinder extends Binder {
         ForegroundService getService() {
@@ -90,8 +88,8 @@ public class ForegroundService extends Service {
     }
 
     /**
-     * Put the service in a foreground state to prevent app from being killed
-     * by the OS.
+     * Put the service in a foreground state to prevent app from being killed by the
+     * OS.
      */
     @Override
     public void onCreate() {
@@ -110,16 +108,15 @@ public class ForegroundService extends Service {
     }
 
     /**
-     * Put the service in a foreground state to prevent app from being killed
-     * by the OS.
+     * Put the service in a foreground state to prevent app from being killed by the
+     * OS.
      */
     private void keepAwake() {
         JSONObject settings = BackgroundMode.getSettings();
 
         startForeground(NOTIFICATION_ID, makeNotification());
 
-        PowerManager pm = (PowerManager)
-                getSystemService(POWER_SERVICE);
+        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
 
         assert pm != null;
         wakeLock = pm.newWakeLock(PARTIAL_WAKE_LOCK, "etrailer:background_activity");
@@ -141,8 +138,8 @@ public class ForegroundService extends Service {
     }
 
     /**
-     * Create a notification as the visible part to be able to put the service
-     * in a foreground state by using the default settings.
+     * Create a notification as the visible part to be able to put the service in a
+     * foreground state by using the default settings.
      */
     private Notification makeNotification() {
         return makeNotification(BackgroundMode.getSettings());
@@ -167,53 +164,45 @@ public class ForegroundService extends Service {
         }
     }
 
-
     /**
-     * Create a notification as the visible part to be able to put the service
-     * in a foreground state.
+     * Create a notification as the visible part to be able to put the service in a
+     * foreground state.
      *
      * @param settings The config settings
      */
     private Notification makeNotification(JSONObject settings) {
         String title = settings.optString("title", NOTIFICATION_TITLE);
         String text = settings.optString("text", NOTIFICATION_TEXT);
-        
-        try{
-            Log.d("ForegroundMode", "Creating notification " + title); 
-        }catch(Exception e){
-            //nothing, probably means title is empty.
+
+        try {
+            Log.d("ForegroundMode", "Creating notification " + title);
+        } catch (Exception e) {
+            // nothing, probably means title is empty.
             Log.e("ForegroundMode", "Couldn't log title", e);
         }
         boolean bigText = settings.optBoolean("bigText", false);
 
         Context context = getApplicationContext();
         String pkgName = context.getPackageName();
-        Intent intent = context.getPackageManager()
-                .getLaunchIntentForPackage(pkgName);
+        Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkgName);
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle(title)
-                .setContentText(text)
-                .setOngoing(true)
-                .setSmallIcon(getIconResId(settings));
+                .setContentTitle(title).setContentText(text).setOngoing(true).setSmallIcon(getIconResId(settings));
 
         if (settings.optBoolean("hidden", true)) {
             notification.setPriority(Notification.PRIORITY_MIN);
         }
 
         if (bigText || text.contains("\n")) {
-            notification.setStyle(
-                    new NotificationCompat.BigTextStyle().bigText(text));
+            notification.setStyle(new NotificationCompat.BigTextStyle().bigText(text));
         }
 
         setColor(notification, settings);
 
         if (intent != null && settings.optBoolean("resume")) {
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            PendingIntent contentIntent = PendingIntent.getActivity(
-                    context, NOTIFICATION_ID, intent,
+            PendingIntent contentIntent = PendingIntent.getActivity(context, NOTIFICATION_ID, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT);
-
 
             notification.setContentIntent(contentIntent);
         }
@@ -283,8 +272,7 @@ public class ForegroundService extends Service {
      * @param settings     A JSON dict containing the color definition (red: FF0000)
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private void setColor(NotificationCompat.Builder notification,
-                          JSONObject settings) {
+    private void setColor(NotificationCompat.Builder notification, JSONObject settings) {
 
         String hex = settings.optString("color", null);
 
@@ -307,6 +295,3 @@ public class ForegroundService extends Service {
     }
 
 }
-
-
-
