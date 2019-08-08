@@ -263,12 +263,11 @@ class BackgroundExt {
             return;
         }
 
-        int level = PowerManager.SCREEN_DIM_WAKE_LOCK |
-                    PowerManager.ACQUIRE_CAUSES_WAKEUP;
+        int level = PowerManager.ACQUIRE_CAUSES_WAKEUP;
 
-        wakeLock = pm.newWakeLock(level, "BackgroundModeExt");
+        wakeLock = pm.newWakeLock(level, "etrailer:backround_ext_wakelock");
         wakeLock.setReferenceCounted(false);
-        wakeLock.acquire(1000);
+        wakeLock.acquire(24 * 60 * 60 * 1000);
     }
 
     /**

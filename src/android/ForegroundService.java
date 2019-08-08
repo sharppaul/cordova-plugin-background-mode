@@ -37,6 +37,7 @@ import android.os.PowerManager;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import static android.os.PowerManager.PARTIAL_WAKE_LOCK;
@@ -60,12 +61,14 @@ public class ForegroundService extends Service {
 
     // Default icon of the background notification
     private static final String NOTIFICATION_ICON = "icon";
+    private static final String TAG = "ForegroundService";
 
     // Binder given to clients
     private final IBinder mBinder = new ForegroundBinder();
 
     // Partial wake lock to prevent the app from going to sleep when locked
     private PowerManager.WakeLock wakeLock;
+    public static boolean started = false;
 
     /**
      * Allow clients to call on to the service.
@@ -87,6 +90,14 @@ public class ForegroundService extends Service {
         }
     }
 
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(TAG, "startId - " + startId);
+        this.startForeground(NOTIFICATION_ID, makeNotification());
+        ForegroundService.started = true;
+        return START_STICKY;
+    }
+
     /**
      * Put the service in a foreground state to prevent app from being killed by the
      * OS.
@@ -94,7 +105,8 @@ public class ForegroundService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        createNotificationChannel();
+        this.startForeground(NOTIFICATION_ID, makeNotification());
+        ForegroundService.started = true;
         keepAwake();
     }
 
@@ -112,15 +124,11 @@ public class ForegroundService extends Service {
      * OS.
      */
     private void keepAwake() {
-        JSONObject settings = BackgroundMode.getSettings();
-
-        startForeground(NOTIFICATION_ID, makeNotification());
-
         PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
 
         assert pm != null;
-        wakeLock = pm.newWakeLock(PARTIAL_WAKE_LOCK, "etrailer:background_activity");
 
+        wakeLock = pm.newWakeLock(PARTIAL_WAKE_LOCK, "etrailer:foreground_service");
         wakeLock.acquire(2 * 24 * 60 * 60 * 1000);
     }
 
@@ -128,6 +136,7 @@ public class ForegroundService extends Service {
      * Stop background mode.
      */
     private void sleepWell() {
+        ForegroundService.started = false;
         stopForeground(true);
         getNotificationManager().cancel(NOTIFICATION_ID);
 
@@ -171,15 +180,11 @@ public class ForegroundService extends Service {
      * @param settings The config settings
      */
     private Notification makeNotification(JSONObject settings) {
+        createNotificationChannel();
+
         String title = settings.optString("title", NOTIFICATION_TITLE);
         String text = settings.optString("text", NOTIFICATION_TEXT);
 
-        try {
-            Log.d("ForegroundMode", "Creating notification " + title);
-        } catch (Exception e) {
-            // nothing, probably means title is empty.
-            Log.e("ForegroundMode", "Couldn't log title", e);
-        }
         boolean bigText = settings.optBoolean("bigText", false);
 
         Context context = getApplicationContext();
@@ -187,7 +192,18 @@ public class ForegroundService extends Service {
         Intent intent = context.getPackageManager().getLaunchIntentForPackage(pkgName);
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context, NOTIFICATION_CHANNEL_ID)
-                .setContentTitle(title).setContentText(text).setOngoing(true).setSmallIcon(getIconResId(settings));
+                .setContentTitle(title).setContentText(text).setOngoing(true);
+
+        if (getIconResId(settings) != 0) {
+            notification.setSmallIcon(getIconResId(settings));
+        } else {
+            try {
+                settings.put("icon", "icon");
+                notification.setSmallIcon(getIconResId(settings));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
 
         if (settings.optBoolean("hidden", true)) {
             notification.setPriority(Notification.PRIORITY_MIN);
@@ -219,7 +235,7 @@ public class ForegroundService extends Service {
         boolean isSilent = settings.optBoolean("silent", false);
 
         if (isSilent) {
-            stopForeground(true);
+            super.stopForeground(true);
             return;
         }
 

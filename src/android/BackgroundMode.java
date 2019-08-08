@@ -26,6 +26,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -33,11 +34,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
+
 import de.appplant.cordova.plugin.background.ForegroundService.ForegroundBinder;
 
 import static android.content.Context.BIND_AUTO_CREATE;
 
 public class BackgroundMode extends CordovaPlugin {
+
+    private String TAG = "BackgroundMode";
 
     // Event types for callbacks
     private enum Event {
@@ -89,16 +94,23 @@ public class BackgroundMode extends CordovaPlugin {
      * @param action   The action to execute.
      * @param args     The exec() arguments.
      * @param callback The callback context used when calling back into JavaScript.
-     *
      * @return Returning false results in a "MethodNotFound" error.
-     *
      * @throws JSONException
      */
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callback) throws JSONException {
 
         if (action.equalsIgnoreCase("configure")) {
-            configure(args.getJSONObject(0), args.getBoolean(1));
+            cordova.getThreadPool().execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        configure(args.getJSONObject(0), args.getBoolean(1));
+                    } catch (JSONException e) {
+                        callback.error("Error parsing json");
+                    }
+                }
+            });
             callback.success();
             return true;
         }
@@ -221,9 +233,10 @@ public class BackgroundMode extends CordovaPlugin {
      * Bind the activity to a background service and put them into foreground state.
      */
     private void startService() {
+        Log.d(TAG, "startService()");
         Activity context = cordova.getActivity();
 
-        if (isDisabled || isBind)
+        if (isDisabled || (isBind && ForegroundService.started))
             return;
 
         Intent intent = new Intent(context, ForegroundService.class);
@@ -231,6 +244,10 @@ public class BackgroundMode extends CordovaPlugin {
         try {
             context.bindService(intent, connection, BIND_AUTO_CREATE);
             fireEvent(Event.ACTIVATE, null);
+
+            // set started flag to false, to prevent killing it when it's waiting for
+            // startForeground.
+            ForegroundService.started = false;
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
                 context.startForegroundService(intent);
@@ -248,6 +265,13 @@ public class BackgroundMode extends CordovaPlugin {
      * Bind the activity to a background service and put them into foreground state.
      */
     private void stopService() {
+        Log.d(TAG, "stopService()");
+
+        // check service if it's running or not, we don't want to kill it in the crucial
+        // moment where android is waiting for startForeground.
+        if (!ForegroundService.started)
+            return;
+
         Activity context = cordova.getActivity();
         Intent intent = new Intent(context, ForegroundService.class);
 
