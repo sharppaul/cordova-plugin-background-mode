@@ -149,6 +149,7 @@ class BackgroundExt {
      */
     private void moveToForeground() {
         Activity  app = getApp();
+
         Intent intent = getLaunchIntent();
 
         intent.addFlags(

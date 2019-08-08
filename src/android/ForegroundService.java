@@ -90,6 +90,7 @@ public class ForegroundService extends Service {
         }
     }
 
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "startId - " + startId);
@@ -97,6 +98,7 @@ public class ForegroundService extends Service {
         ForegroundService.started = true;
         return START_STICKY;
     }
+
 
     /**
      * Put the service in a foreground state to prevent app from being killed by the

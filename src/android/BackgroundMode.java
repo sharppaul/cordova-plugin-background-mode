@@ -25,6 +25,7 @@ import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Handler;
 import android.os.IBinder;
 import android.util.Log;
 
@@ -224,7 +225,7 @@ public class BackgroundMode extends CordovaPlugin {
      * @param settings The config settings
      */
     private void updateNotification(JSONObject settings) {
-        if (isBind && service != null) {
+        if (isBind && service != null && inBackground) {
             service.updateNotification(settings);
         }
     }
@@ -265,12 +266,24 @@ public class BackgroundMode extends CordovaPlugin {
      * Bind the activity to a background service and put them into foreground state.
      */
     private void stopService() {
+        stopService(true);
+    }
+
+    /**
+     * Bind the activity to a background service and put them into foreground state.
+     */
+    private void stopService(boolean retry) {
         Log.d(TAG, "stopService()");
 
         // check service if it's running or not, we don't want to kill it in the crucial
         // moment where android is waiting for startForeground.
-        if (!ForegroundService.started)
+        if (!ForegroundService.started) {
+            Log.d(TAG, "Couldn't stop service, because it hasn't started yet. " + (retry ? "retrying!" : ""));
+            if (retry)
+                return;
+            new Handler().postDelayed(() -> stopService(false), 1000);
             return;
+        }
 
         Activity context = cordova.getActivity();
         Intent intent = new Intent(context, ForegroundService.class);
